@@ -1,6 +1,8 @@
-name: Build Smart Repair WETOOL Controller Test
+name: Build Smart Repair WETOOL Controller Test 3
 on:
   workflow_dispatch:
+  push:
+    branches: [ main, master ]
 jobs:
   build:
     runs-on: windows-latest
@@ -10,18 +12,19 @@ jobs:
         with:
           python-version: '3.13'
       - name: Install
-        run: pip install -r requirements.txt
-      - name: Build
-        run: pyinstaller --noconfirm --clean --onefile --windowed --name Smart_Repair_WETOOL_Controller_Test --noupx main.py
-      - name: Package portable
+        run: python -m pip install --upgrade pip pyinstaller
+      - name: Build EXE
+        run: pyinstaller --noconfirm --clean --onefile --windowed --name Smart_Repair_Controller_Test3 main.py
+      - name: Prepare portable package
         shell: powershell
         run: |
-          New-Item -ItemType Directory -Force -Path release\external | Out-Null
-          Copy-Item dist\Smart_Repair_WETOOL_Controller_Test.exe release\
-          Copy-Item external\wetool.exe release\external\
-          Copy-Item external\spiway_v0.60_teensy2.0.hex release\external\
-          Copy-Item README.txt release\
+          New-Item -ItemType Directory -Force -Path dist\external | Out-Null
+          Copy-Item external\wetool.exe dist\external\wetool.exe -Force
+          Copy-Item external\spiway_v0.60_teensy2.0.hex dist\external\spiway_v0.60_teensy2.0.hex -Force
       - uses: actions/upload-artifact@v4
         with:
-          name: Smart-Repair-WETOOL-Controller-Test
-          path: release
+          name: Smart_Repair_Controller_Test3
+          path: |
+            dist/Smart_Repair_Controller_Test3.exe
+            dist/external/wetool.exe
+            dist/external/spiway_v0.60_teensy2.0.hex
