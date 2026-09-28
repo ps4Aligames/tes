@@ -1,4 +1,4 @@
-name: Build Smart Repair Controller
+name: Build Smart Repair Safe Read
 
 on:
   workflow_dispatch:
@@ -14,15 +14,15 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r requirements.txt
-      - run: pyinstaller --noconfirm --clean --onefile --windowed --name Smart_Repair_Controller src/smart_repair.py
+      - run: pyinstaller --noconfirm --clean --onefile --windowed --name Smart_Repair_Safe_Read src/smart_repair.py
       - shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist\external | Out-Null
           Copy-Item external\wetool.exe dist\external\
           Copy-Item external\BwE_PS4_NOR_Validator.exe dist\external\
           Copy-Item "external\spiway_v0.60_teensy2.0(1).hex" dist\external\
-          Compress-Archive -Path dist\Smart_Repair_Controller.exe,dist\external -DestinationPath Smart_Repair_Controller_RELEASE.zip -Force
+          Compress-Archive -Path dist\Smart_Repair_Safe_Read.exe,dist\external -DestinationPath Smart_Repair_Safe_Read_RELEASE.zip -Force
       - uses: actions/upload-artifact@v4
         with:
-          name: Smart_Repair_Controller_RELEASE
-          path: Smart_Repair_Controller_RELEASE.zip
+          name: Smart_Repair_Safe_Read_RELEASE
+          path: Smart_Repair_Safe_Read_RELEASE.zip
