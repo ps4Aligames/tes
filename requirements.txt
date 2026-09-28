@@ -1,1 +1,1 @@
-# No external controller library required; Win32 SendInput is used directly.
+# No third-party Python packages required for the UI build.

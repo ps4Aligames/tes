@@ -1,5 +1,9 @@
-SMART REPAIR WETOOL CONTROLLER TEST 6
+SMART REPAIR EDITION BY ALI GAMES
 
-TEST 6: WETOOL asli -> NO.3 -> READ ALL/READ FULL -> capture real output -> R rename -> launch original BwE validator -> attempt No.7.
-Smart Repair is controller only; it does not implement its own NOR reader.
-BwE executable is bundled as external/BwE_PS4_NOR_Validator.exe for this test.
+ALL COMMANDS RESPONSIVE FIX
+- COM detection is automatic; no COM number is hard-coded.
+- Long file scanning/MD5 and device enumeration run off the Tkinter UI thread.
+- Command buttons are locked only while a background operation is active to prevent conflicting operations.
+- STOP PROSES requests a safe stop for background operations.
+- Stage 1 UI follows WETOOL No.3 -> Serial ports -> SPIway/Juegos -> READ ALL without launching wetool.exe.
+- Hardware READ ALL is not faked; actual SPIway protocol must be implemented/verified before claiming a real NOR dump.
