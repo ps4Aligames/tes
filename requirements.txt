@@ -1,1 +1,1 @@
-# No third-party Python packages required for the UI build.
+pyserial>=3.5
