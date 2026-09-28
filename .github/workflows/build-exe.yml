@@ -1,28 +1,28 @@
-name: Build Smart Repair Native Controller
+name: Build Smart Repair Controller
+
 on:
   workflow_dispatch:
   push:
     branches: [ main, master ]
+
 jobs:
   build:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: '3.13'}
-      - name: Install
-        run: python -m pip install --upgrade pip pyinstaller pyserial
-      - name: Build
-        run: pyinstaller --noconfirm --clean --onefile --windowed --name Smart_Repair_Native_Controller src/smart_repair.py
-      - name: Package EXE with native tools
-        shell: pwsh
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: pyinstaller --noconfirm --clean --onefile --windowed --name Smart_Repair_Controller src/smart_repair.py
+      - shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path release\external | Out-Null
-          Copy-Item dist\Smart_Repair_Native_Controller.exe release\
-          Copy-Item external\wetool.exe release\external\
-          Copy-Item external\BwE_PS4_NOR_Validator.exe release\external\
-          Copy-Item external\spiway_v0.60_teensy2.0.hex release\external\
+          New-Item -ItemType Directory -Force -Path dist\external | Out-Null
+          Copy-Item external\wetool.exe dist\external\
+          Copy-Item external\BwE_PS4_NOR_Validator.exe dist\external\
+          Copy-Item "external\spiway_v0.60_teensy2.0(1).hex" dist\external\
+          Compress-Archive -Path dist\Smart_Repair_Controller.exe,dist\external -DestinationPath Smart_Repair_Controller_RELEASE.zip -Force
       - uses: actions/upload-artifact@v4
         with:
-          name: Smart_Repair_Native_Controller
-          path: release
+          name: Smart_Repair_Controller_RELEASE
+          path: Smart_Repair_Controller_RELEASE.zip
