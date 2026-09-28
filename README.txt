@@ -1,9 +1,12 @@
-SMART REPAIR EDITION BY ALI GAMES
+SMART REPAIR NATIVE CONTROLLER — PROOF PACKAGE
 
-ALL COMMANDS RESPONSIVE FIX
-- COM detection is automatic; no COM number is hard-coded.
-- Long file scanning/MD5 and device enumeration run off the Tkinter UI thread.
-- Command buttons are locked only while a background operation is active to prevent conflicting operations.
-- STOP PROSES requests a safe stop for background operations.
-- Stage 1 UI follows WETOOL No.3 -> Serial ports -> SPIway/Juegos -> READ ALL without launching wetool.exe.
-- Hardware READ ALL is not faked; actual SPIway protocol must be implemented/verified before claiming a real NOR dump.
+This is based on the REAL supplied WETOOL/BwE files, not a simulated NOR reader.
+
+Stage 1 target sequence:
+No.3 -> detect COM/Teensy -> SPIway/Juegos -> READ ALL -> Read Full selesai -> F -> R
+(R = Rename Non-Canonical, only once) -> BwE -> No.7 -> Y
+
+The controller launches the original tools and keeps them outside the small controller EXE.
+See PROOF_REPORT.txt for binary inspection evidence.
+
+Actual hardware execution still requires Windows + the user's Teensy/SPI connection.

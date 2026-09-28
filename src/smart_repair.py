@@ -1,102 +1,182 @@
-import os, sys, time, subprocess, threading, queue, tkinter as tk
+import os
+import subprocess
+import threading
+import time
+import queue
+import tkinter as tk
 from tkinter import filedialog, messagebox
-
-ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-EXT=os.path.join(ROOT,'external')
-WETOOL=os.path.join(EXT,'wetool.exe')
-BWE=os.path.join(EXT,'BwE_PS4_NOR_Validator.exe')
 
 try:
     import serial.tools.list_ports
 except Exception:
-    serial=None
+    serial = None
 
-# Windows-only keyboard control. Smart Repair sends only the native single-key commands
-# requested by the user; it does not implement/fake WETOOL's hardware protocol.
-if os.name == 'nt':
-    import ctypes
-    user32=ctypes.windll.user32
-    VK_F=0x46; VK_R=0x52; VK_7=0x37; VK_Y=0x59
-    KEYEVENTF_KEYUP=0x0002
-    def send_key(vk):
-        user32.keybd_event(vk,0,0,0); user32.keybd_event(vk,0,KEYEVENTF_KEYUP,0)
-else:
-    def send_key(vk): raise OSError('Windows required')
+BASE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(BASE)
+EXT = os.path.join(ROOT, "external")
+WETOOL = os.path.join(EXT, "wetool.exe")
+BWE = os.path.join(EXT, "BwE_PS4_NOR_Validator.exe")
 
-class App(tk.Tk):
-    def __init__(self):
-        super().__init__(); self.title('SMART REPAIR EDITION BY ALI GAMES'); self.geometry('1100x680'); self.configure(bg='#101010')
-        self.q=queue.Queue(); self.wproc=None; self.bproc=None
-        self.build(); self.after(100,self.pump); self.detect_com()
-    def build(self):
-        top=tk.Frame(self,bg='#171717'); top.pack(fill='x',padx=10,pady=10)
-        tk.Label(top,text='SMART REPAIR',fg='#d7b35a',bg='#171717',font=('Segoe UI',20,'bold')).pack(side='left',padx=15,pady=12)
-        tk.Label(top,text='EDITION BY ALI GAMES',fg='#ddd',bg='#171717').pack(side='left')
-        bar=tk.Frame(self,bg='#101010'); bar.pack(fill='x',padx=15,pady=4)
-        self.btn(bar,'SMART READ FULL NOR',self.start,True).pack(side='left')
-        self.btn(bar,'OPEN WETOOL',self.open_wetool).pack(side='left',padx=6)
-        self.btn(bar,'F',lambda:self.command('F')).pack(side='left',padx=2)
-        self.btn(bar,'R',lambda:self.command('R')).pack(side='left',padx=2)
-        self.btn(bar,'OPEN BwE',self.open_bwe).pack(side='left',padx=6)
-        self.btn(bar,'No.7',lambda:self.command('7')).pack(side='left',padx=2)
-        self.btn(bar,'Y',lambda:self.command('Y')).pack(side='left',padx=2)
-        self.com=tk.StringVar(value='COM: scanning...')
-        tk.Label(bar,textvariable=self.com,bg='#101010',fg='#bbb').pack(side='right',padx=10)
-        body=tk.Frame(self,bg='#101010'); body.pack(fill='both',expand=True,padx=15,pady=10)
-        self.log=tk.Text(body,bg='#050505',fg='#ddd',font=('Consolas',10),relief='flat'); self.log.pack(side='left',fill='both',expand=True)
-        info=tk.Frame(body,bg='#181818',width=280); info.pack(side='right',fill='y',padx=(10,0)); info.pack_propagate(False)
-        self.status=tk.StringVar(value='READY'); self.step=tk.StringVar(value='—')
-        for title,var in [('STATUS',self.status),('STEP',self.step)]:
-            f=tk.Frame(info,bg='#222'); f.pack(fill='x',padx=10,pady=10)
-            tk.Label(f,text=title,bg='#222',fg='#d7b35a',font=('Segoe UI',9,'bold')).pack(anchor='w',padx=10,pady=7)
-            tk.Label(f,textvariable=var,bg='#222',fg='white',wraplength=240,justify='left').pack(anchor='w',padx=10,pady=(0,10))
-        tk.Label(self,text='Original PS4WETOOLS PRO',bg='#0b0b0b',fg='#aaa',anchor='w',padx=15,pady=8).pack(fill='x')
-    def btn(self,p,text,cmd,primary=False):
-        return tk.Button(p,text=text,command=cmd,bg='#292929' if not primary else '#3a3020',fg='#eee' if not primary else '#f0d27a',relief='flat',padx=10,pady=8,font=('Segoe UI',9,'bold'))
-    def logx(self,s): self.q.put(('log',s))
-    def setv(self,v,s): self.q.put(('v',v,s))
-    def detect_com(self):
-        if serial:
-            ports=list(serial.tools.list_ports.comports())
-            names=[p.device for p in ports]
-            self.com.set('COM: '+(', '.join(names) if names else 'not detected'))
-        else: self.com.set('COM: install pyserial / GitHub build includes it')
-        self.after(1500,self.detect_com)
-    def open_wetool(self):
-        if not os.path.exists(WETOOL): return messagebox.showerror('WETOOL','external/wetool.exe tidak ditemukan')
-        self.wproc=subprocess.Popen([WETOOL],cwd=EXT); self.logx('WETOOL dibuka. Smart Repair tidak menggantikan fungsi WETOOL.')
-    def open_bwe(self):
-        if not os.path.exists(BWE): return messagebox.showerror('BwE','external/BwE_PS4_NOR_Validator.exe tidak ditemukan')
-        self.bproc=subprocess.Popen([BWE],cwd=EXT); self.logx('BwE Validator dibuka.')
-    def command(self,c):
-        if os.name!='nt': return
-        try:
-            key={'F':VK_F,'R':VK_R,'7':VK_7,'Y':VK_Y}[c]
-            send_key(key); self.logx('Perintah native dikirim: '+c)
-        except Exception as e: messagebox.showerror('Command',str(e))
-    def start(self):
-        if not messagebox.askyesno('SMART READ FULL NOR','Buka WETOOL dan mulai alur perintah?\n\nSetelah No.3/READ ALL dijalankan di WETOOL, Smart Repair akan menunggu konfirmasi Read Full selesai sebelum F → R → BwE → 7 → Y.'):
-            return
-        threading.Thread(target=self.run,daemon=True).start()
-    def run(self):
-        self.setv(self.status,'RUNNING'); self.setv(self.step,'No.3')
-        self.open_wetool(); self.logx('SMART READ FULL NOR → No.3 → Deteksi COM/Teensy → SPIway/Juegos → READ ALL')
-        self.logx('Catatan: Smart tidak mengarang READ ALL. READ ALL tetap dijalankan oleh WETOOL.')
-        if not messagebox.askyesno('Read Full selesai?','Klik YES setelah WETOOL benar-benar menampilkan Read Full selesai.\nLalu Smart akan mengirim F → R dan membuka BwE.'):
-            self.setv(self.status,'READY'); return
-        self.setv(self.step,'F otomatis'); self.command('F'); time.sleep(.4)
-        self.setv(self.step,'R = Rename Non-Canonical'); self.command('R'); time.sleep(.8)
-        self.setv(self.step,'BwE'); self.open_bwe(); time.sleep(1.0)
-        self.setv(self.step,'No.7'); self.command('7'); time.sleep(.4)
-        self.setv(self.step,'Y'); self.command('Y'); self.setv(self.step,'Selesai'); self.setv(self.status,'READY')
-        self.logx('Tahap 1 selesai: READ ALL → Read Full selesai → F → R (Rename Non-Canonical) → BwE → No.7 → Y')
-    def pump(self):
+class App:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("SMART REPAIR EDITION BY ALI GAMES")
+        self.root.geometry("1120x680")
+        self.root.configure(bg="#0d0d0d")
+        self.proc = None
+        self.q = queue.Queue()
+
+        tk.Label(root, text="SMART REPAIR", fg="#d6b45a", bg="#0d0d0d",
+                 font=("Segoe UI", 20, "bold")).pack(anchor="w", padx=18, pady=(14,2))
+        tk.Label(root, text="SMART REPAIR EDITION BY ALI GAMES  •  ORIGINAL PS4WETOOLS PRO",
+                 fg="#b9b9b9", bg="#0d0d0d", font=("Segoe UI", 9)).pack(anchor="w", padx=20)
+
+        bar = tk.Frame(root, bg="#151515")
+        bar.pack(fill="x", padx=16, pady=12)
+        self.buttons = []
+        labels = [
+            ("1  SMART READ FULL NOR", self.stage1),
+            ("2  WIRATE NOR FULL PS4", self.not_ready),
+            ("3  SMART PATCH WIRATE NOR", self.not_ready),
+            ("4  SMART SYSCON PATCH", self.not_ready),
+            ("5  SMART SYSCON REBUILD", self.not_ready),
+        ]
+        for text, cmd in labels:
+            b = tk.Button(bar, text=text, command=cmd, bg="#202020", fg="#e6e6e6",
+                          activebackground="#303030", activeforeground="#ffffff",
+                          relief="flat", padx=10, pady=9)
+            b.pack(side="left", padx=4, pady=8)
+            self.buttons.append(b)
+
+        body = tk.Frame(root, bg="#0d0d0d")
+        body.pack(fill="both", expand=True, padx=16)
+        left = tk.Frame(body, bg="#090909")
+        left.pack(side="left", fill="both", expand=True)
+        right = tk.Frame(body, bg="#151515", width=300)
+        right.pack(side="right", fill="y", padx=(12,0))
+        right.pack_propagate(False)
+
+        tk.Label(left, text="ACTIVITY / NATIVE TOOL OUTPUT", bg="#090909", fg="#d6b45a",
+                 font=("Consolas", 10, "bold")).pack(anchor="w", padx=10, pady=8)
+        self.log = tk.Text(left, bg="#050505", fg="#d9d9d9", insertbackground="white",
+                           font=("Consolas", 10), relief="flat")
+        self.log.pack(fill="both", expand=True, padx=8, pady=(0,8))
+
+        tk.Label(right, text="CONNECTION", bg="#151515", fg="#d6b45a",
+                 font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=14, pady=(14,6))
+        self.com = tk.Label(right, text="Scanning COM...", bg="#151515", fg="#ddd",
+                            justify="left", anchor="w")
+        self.com.pack(fill="x", padx=14)
+        tk.Button(right, text="REFRESH COM", command=self.scan_com,
+                  bg="#242424", fg="white", relief="flat").pack(fill="x", padx=14, pady=10)
+
+        tk.Label(right, text="TOOLS", bg="#151515", fg="#d6b45a",
+                 font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=14, pady=(12,6))
+        tk.Button(right, text="OPEN ORIGINAL WETOOL", command=self.open_wetool,
+                  bg="#242424", fg="white", relief="flat").pack(fill="x", padx=14, pady=4)
+        tk.Button(right, text="OPEN ORIGINAL BwE", command=self.open_bwe,
+                  bg="#242424", fg="white", relief="flat").pack(fill="x", padx=14, pady=4)
+
+        tk.Label(right, text="IMPORTANT", bg="#151515", fg="#d6b45a",
+                 font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=14, pady=(18,6))
+        tk.Label(right, text="Smart Repair does not emulate NOR reading.\n"
+                             "The supplied original WETOOL and BwE executables remain the workers.\n"
+                             "SPIway HEX is firmware for the Teensy workflow.",
+                 bg="#151515", fg="#aaa", justify="left", wraplength=260).pack(fill="x", padx=14)
+
+        self.scan_com()
+        self.write("Controller started. Using the ORIGINAL supplied WETOOL/BwE files.")
+        self.write("Stage 1 target: No.3 → COM/Teensy → SPIway/Juegos → READ ALL → F → R (Rename Non-Canonical) → BwE → No.7 → Y.")
+        self.root.after(100, self.drain)
+
+    def write(self, s):
+        self.log.insert("end", s + "\n")
+        self.log.see("end")
+
+    def drain(self):
         try:
             while True:
-                x=self.q.get_nowait()
-                if x[0]=='log': self.log.insert('end',x[1]+'\n'); self.log.see('end')
-                else: x[1].set(x[2])
-        except queue.Empty: pass
-        self.after(100,self.pump)
+                self.write(self.q.get_nowait())
+        except queue.Empty:
+            pass
+        self.root.after(100, self.drain)
 
-if __name__=='__main__': App().mainloop()
+    def scan_com(self):
+        if serial is None:
+            self.com.config(text="pyserial not installed")
+            return
+        ports = list(serial.tools.list_ports.comports())
+        if not ports:
+            self.com.config(text="No COM/Teensy detected")
+            self.write("COM scan: no serial ports detected.")
+        else:
+            lines = [f"{p.device}  {p.description or ''}".strip() for p in ports]
+            self.com.config(text="\n".join(lines))
+            self.write("COM scan: " + " | ".join(lines))
+
+    def open_wetool(self):
+        if not os.path.exists(WETOOL):
+            messagebox.showerror("WETOOL", "external/wetool.exe not found")
+            return
+        try:
+            subprocess.Popen([WETOOL], cwd=EXT)
+            self.write("Started ORIGINAL WETOOL: " + WETOOL)
+        except Exception as e:
+            self.write("WETOOL launch error: " + repr(e))
+
+    def open_bwe(self):
+        if not os.path.exists(BWE):
+            messagebox.showerror("BwE", "external/BwE_PS4_NOR_Validator.exe not found")
+            return
+        try:
+            subprocess.Popen([BWE], cwd=EXT)
+            self.write("Started ORIGINAL BwE: " + BWE)
+        except Exception as e:
+            self.write("BwE launch error: " + repr(e))
+
+    def stage1(self):
+        if not os.path.exists(WETOOL):
+            messagebox.showerror("Stage 1", "Original WETOOL missing.")
+            return
+        threading.Thread(target=self.stage1_worker, daemon=True).start()
+
+    def stage1_worker(self):
+        self.q.put("SMART READ FULL NOR: starting native-controller workflow.")
+        self.q.put("Mempersiapkan koneksi...")
+        self.scan_com()
+        try:
+            # Deliberately launch the real WETOOL. No fake READ ALL/NOR data is generated.
+            self.proc = subprocess.Popen([WETOOL], cwd=EXT,
+                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                         stderr=subprocess.STDOUT, text=True,
+                                         bufsize=1)
+            self.q.put("WETOOL asli dijalankan.")
+            self.q.put("Membuka No.3...")
+            # We only send the menu selector that is documented by the agreed workflow.
+            # Subsequent hardware actions stay inside the original WETOOL so the controller
+            # cannot fabricate a NOR result.
+            try:
+                self.proc.stdin.write("3\n")
+                self.proc.stdin.flush()
+                self.q.put("Perintah No.3 dikirim ke WETOOL asli.")
+            except Exception as e:
+                self.q.put("Tidak dapat mengirim No.3 via stdin: " + repr(e))
+            # Stream native output if the original tool exposes it.
+            deadline = time.time() + 8
+            while time.time() < deadline and self.proc.poll() is None:
+                line = self.proc.stdout.readline()
+                if line:
+                    self.q.put("[WETOOL] " + line.rstrip())
+                else:
+                    time.sleep(0.05)
+            self.q.put("Menunggu interaksi/native workflow WETOOL; tidak membuat hasil NOR palsu.")
+        except Exception as e:
+            self.q.put("Stage 1 launch error: " + repr(e))
+
+    def not_ready(self):
+        messagebox.showinfo("Native controller", "Stage ini belum diaktifkan karena selector native WETOOL belum diverifikasi. Tidak ada simulasi yang dijalankan.")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    App(root)
+    root.mainloop()
