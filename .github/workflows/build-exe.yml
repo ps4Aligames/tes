@@ -1,0 +1,27 @@
+name: Build Smart Repair Test EXE
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install PyInstaller
+        run: python -m pip install --upgrade pyinstaller
+      - name: Build EXE
+        run: pyinstaller --noconfirm --clean --onefile --windowed --noupx --name Smart_Repair_Test main.py
+      - name: Prepare portable package
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          Copy-Item dist\Smart_Repair_Test.exe release\Smart_Repair_Test.exe
+          Copy-Item wetool.exe release\wetool.exe
+          Copy-Item README.txt release\README.txt
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Smart-Repair-Test-Portable
+          path: release
