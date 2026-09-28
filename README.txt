@@ -1,12 +1,12 @@
-SMART REPAIR NATIVE CONTROLLER — PROOF PACKAGE
+SMART REPAIR SAFE READ CONTROLLER
 
-This is based on the REAL supplied WETOOL/BwE files, not a simulated NOR reader.
+This first test package uses the REAL supplied:
+- wetool.exe
+- BwE_PS4_NOR_Validator.exe
+- spiway_v0.60_teensy2.0(1).hex
 
-Stage 1 target sequence:
-No.3 -> detect COM/Teensy -> SPIway/Juegos -> READ ALL -> Read Full selesai -> F -> R
-(R = Rename Non-Canonical, only once) -> BwE -> No.7 -> Y
+Current mode is deliberately SAFE:
+SMART READ FULL NOR -> detect COM -> open original WETOOL -> user performs native No.3/READ ALL.
 
-The controller launches the original tools and keeps them outside the small controller EXE.
-See PROOF_REPORT.txt for binary inspection evidence.
-
-Actual hardware execution still requires Windows + the user's Teensy/SPI connection.
+It does NOT send blind keyboard commands and does NOT write/patch the PS4.
+The purpose is to establish a safe starting point before automating native WETOOL controls.
