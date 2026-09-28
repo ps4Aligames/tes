@@ -1,0 +1,25 @@
+name: Build Smart Repair Controller TEST 7
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Build EXE
+        shell: pwsh
+        run: pyinstaller --noconfirm --clean --onefile --windowed --name Smart_Repair_Controller smart_try/main.py
+      - name: Copy external files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/external | Out-Null
+          Copy-Item smart_try/external/wetool.exe dist/external/wetool.exe
+          Copy-Item smart_try/external/BwE_PS4_NOR_Validator.exe dist/external/BwE_PS4_NOR_Validator.exe
+          Copy-Item smart_try/external/spiway_v0.60_teensy2.0.hex dist/external/spiway_v0.60_teensy2.0.hex
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Smart_Repair_Controller_TEST7
+          path: dist/
