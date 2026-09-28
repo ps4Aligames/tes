@@ -1,2 +1,1 @@
-pywinauto>=0.6.9
-pyinstaller>=6.16
+# No external controller library required; Win32 SendInput is used directly.

@@ -1,23 +1,14 @@
-SMART REPAIR - WETOOL CONTROLLER TEST 2
+SMART REPAIR - WETOOL CONTROLLER TEST 3
 
-Tujuan:
-- Smart Repair hanya menjadi controller untuk WETOOL asli.
-- Tidak ada implementasi READ FULL sendiri.
-- WETOOL asli yang melakukan operasi hardware.
+Tujuan test:
+1. Jalankan WETOOL asli.
+2. Cari HWND WETOOL berdasarkan PID.
+3. Aktifkan WETOOL ke foreground.
+4. Kirim angka 3 + ENTER melalui Win32 SendInput.
+5. Tunggu 2 detik.
+6. Kirim angka 1 + ENTER melalui Win32 SendInput.
 
-Perubahan TEST 2:
-- WETOOL tidak lagi dijalankan hidden pada awal proses.
-- Controller mencari window WETOOL dengan backend UIA dan Win32.
-- Setelah handle/window ditemukan, WETOOL diminimalkan.
-- Baru kemudian controller mencoba NO.3 lalu NO.1.
-- READ FULL belum dipaksa pada TEST 2.
+Test ini TIDAK membuat engine READ FULL sendiri.
+READ FULL belum dipanggil otomatis; test hanya membuktikan jalur input controller.
 
-Portable:
-- Smart_Repair_WETOOL_Controller_Test.exe
-- external/wetool.exe
-- external/spiway_v0.60_teensy2.0.hex
-
-Build:
-1. Upload repository ke GitHub.
-2. Actions -> Build Smart Repair WETOOL Controller Test -> Run workflow.
-3. Download artifact.
+Catatan: pada TEST 3 WETOOL sengaja terlihat selama pengujian agar mudah dibuktikan bahwa perintah benar-benar masuk. Jika ini berhasil, tahap berikutnya baru kita ubah agar WETOOL diminimalkan/background.
