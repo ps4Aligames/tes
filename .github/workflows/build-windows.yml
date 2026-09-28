@@ -1,30 +1,43 @@
-name: Build Smart Repair Controller TEST 8
+name: Build Windows EXE
+
 on:
   workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v6
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
           python-version: '3.13'
-      - name: Install build dependencies
-        shell: pwsh
+
+      - name: Install dependencies
+        shell: powershell
         run: |
           python -m pip install --upgrade pip
-          python -m pip install pyinstaller==6.16.0
+          python -m pip install -r requirements.txt pyinstaller
+
       - name: Build EXE
-        shell: pwsh
-        run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name Smart_Repair_Controller smart_try/main.py
-      - name: Copy external files
-        shell: pwsh
+        shell: powershell
         run: |
-          New-Item -ItemType Directory -Force -Path dist/external | Out-Null
-          Copy-Item smart_try/external/wetool.exe dist/external/wetool.exe
-          Copy-Item smart_try/external/BwE_PS4_NOR_Validator.exe dist/external/BwE_PS4_NOR_Validator.exe
-          Copy-Item smart_try/external/spiway_v0.60_teensy2.0.hex dist/external/spiway_v0.60_teensy2.0.hex
-      - uses: actions/upload-artifact@v4
+          pyinstaller --noconfirm --clean --onefile --windowed --name PS4_NOR_Inspector src/ps4_nor_inspector.py
+
+      - name: Verify EXE
+        shell: powershell
+        run: |
+          if (-not (Test-Path 'dist/PS4_NOR_Inspector.exe')) { throw 'EXE tidak ditemukan' }
+          Get-Item 'dist/PS4_NOR_Inspector.exe' | Format-List Name,Length,FullName
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
         with:
-          name: Smart_Repair_Controller_TEST8
-          path: dist/
+          name: PS4-NOR-Inspector-v2-Windows
+          path: dist/PS4_NOR_Inspector.exe
+          if-no-files-found: error
+          retention-days: 30
