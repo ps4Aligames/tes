@@ -57,7 +57,7 @@ kernel32.WriteConsoleInputW.restype = wintypes.BOOL
 class App:
     def __init__(self, root):
         self.root = root
-        self.root.title('SMART REPAIR EDITION BY ALI GAMES - WETOOL CONTROLLER TEST 7')
+        self.root.title('SMART REPAIR EDITION BY ALI GAMES - WETOOL CONTROLLER TEST 8')
         self.root.geometry('1080x680')
         self.root.configure(bg='#0b0b0d')
         self.q = queue.Queue(); self.proc = None; self.hwnd = None; self.bwe_proc = None; self.running = False
@@ -102,7 +102,7 @@ class App:
 
     def worker(self):
         try:
-            self.q.put('[SMART] TEST 7: READ FULL → F → RENAME → LOAD KE BwE.\n')
+            self.q.put('[SMART] TEST 8: READ FULL → F → RENAME → LOAD KE BwE.\n')
             self.q.put('[SMART] WETOOL asli tetap menjadi engine.\n')
             self.q.put('[SMART] Menjalankan WETOOL asli...\n')
             self.proc = subprocess.Popen([WETOOL], cwd=os.path.dirname(WETOOL))
