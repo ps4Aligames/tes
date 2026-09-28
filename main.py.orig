@@ -5,7 +5,6 @@ from tkinter import messagebox
 
 BASE = os.path.dirname(os.path.abspath(sys.argv[0]))
 WETOOL = os.path.join(BASE, 'external', 'wetool.exe')
-BWE = os.path.join(BASE, 'external', 'BwE_PS4_NOR_Validator.exe')
 
 user32 = ctypes.windll.user32
 kernel32 = ctypes.windll.kernel32
@@ -60,7 +59,7 @@ class App:
         self.root.title('SMART REPAIR EDITION BY ALI GAMES - WETOOL CONTROLLER TEST 5')
         self.root.geometry('1080x680')
         self.root.configure(bg='#0b0b0d')
-        self.q = queue.Queue(); self.proc = None; self.hwnd = None; self.bwe_proc = None; self.running = False
+        self.q = queue.Queue(); self.proc = None; self.hwnd = None; self.running = False
         self.last_filtered = ''
         self.ui(); self.root.after(100, self.pump)
 
@@ -100,8 +99,8 @@ class App:
 
     def worker(self):
         try:
-            self.q.put('[SMART] TEST 6: READ FULL → RENAME → BwE No.7.\n')
-            self.q.put('[SMART] WETOOL asli tetap menjadi engine.\n')
+            self.q.put('[SMART] TEST 5: controller WETOOL + filtered log.\n')
+            self.q.put('[SMART] Bagian SPIway/Actions/Make choice disembunyikan.\n')
             self.q.put('[SMART] Menjalankan WETOOL asli...\n')
             self.proc = subprocess.Popen([WETOOL], cwd=os.path.dirname(WETOOL))
             self.q.put(f'[SMART] PID WETOOL = {self.proc.pid}\n')
@@ -109,127 +108,34 @@ class App:
             if not hwnds:
                 self.q.put('[ERROR] Tidak menemukan HWND WETOOL.\n'); return
             self.hwnd = self.choose_window(hwnds)
-            self.q.put('[SMART] WETOOL ditemukan.\n')
-            time.sleep(1)
-            ok3=self.console_command('3')
+            self.q.put('[SMART] WETOOL ditemukan: HWND=0x%X\n' % self.hwnd)
+            time.sleep(1.0)
+            ok3 = self.console_command('3')
             self.q.put('[SMART] NO. 3 → %s\n' % ('OK ✓' if ok3 else 'GAGAL'))
-            # Wait for chip info and hide internal SPIway menu from Smart Repair log.
-            for _ in range(40):
+            # Give WETOOL time to enter SPIway and render its real chip information.
+            for _ in range(12):
                 if self.proc.poll() is not None: break
-                text=self.read_console_text(self.proc.pid)
-                filtered=self.filter_version_to_flash(text)
-                if filtered: self.q.put(('__FILTER__', filtered))
-                time.sleep(.25)
-            ok1=self.console_command('1')
-            self.q.put('[SMART] READ FULL / READ ALL → %s\n' % ('DIKIRIM ✓' if ok1 else 'GAGAL'))
-            self.q.put('[SMART] Membaca NOR...\n')
-            # Capture real WETOOL output while reading. No fake percentage is generated.
-            last=''
-            read_done=False
-            for _ in range(2400):
+                text = self.read_console_text(self.proc.pid)
+                filtered = self.filter_version_to_flash(text)
+                if filtered:
+                    self.q.put(('__FILTER__', filtered))
+                time.sleep(0.25)
+            self.q.put('[SMART] Mengirim NO. 1 melalui Console Input WETOOL...\n')
+            ok1 = self.console_command('1')
+            self.q.put('[SMART] NO. 1 → %s\n' % ('OK ✓' if ok1 else 'GAGAL'))
+            # Keep capturing only the requested information block.
+            for _ in range(20):
                 if self.proc.poll() is not None: break
-                text=self.read_console_text(self.proc.pid)
-                if text and text!=last:
-                    last=text
-                    filtered=self.filter_read_output(text)
-                    if filtered: self.q.put(('__READ__', filtered))
-                    if self.is_read_complete(text):
-                        read_done=True; break
-                time.sleep(.25)
-            if not read_done:
-                self.q.put('[SMART] READ FULL belum terdeteksi selesai dari output WETOOL.\n')
-                return
-            self.q.put('[SMART] READ FULL SELESAI ✓\n')
-            # Show newest NOR/bin information found under the WETOOL directory tree.
-            info=self.find_newest_nor()
-            if info:
-                self.q.put(('__FILEINFO__', info))
-                self.q.put('[SMART] File NOR hasil READ ditemukan.\n')
-            else:
-                self.q.put('[SMART] File NOR hasil READ belum ditemukan otomatis.\n')
-            # Return to WETOOL main menu if needed and issue canonical rename command.
-            time.sleep(1)
-            self.q.put('[SMART] Mengirim R: Rename File to Canonical Name...\n')
-            okr=self.console_command('r')
-            self.q.put('[SMART] R → %s\n' % ('OK ✓' if okr else 'GAGAL'))
-            time.sleep(2)
-            # Launch the supplied original BwE executable.
-            if not os.path.exists(BWE):
-                self.q.put('[ERROR] BwE_PS4_NOR_Validator.exe tidak ditemukan.\n'); return
-            self.bwe_proc=subprocess.Popen([BWE], cwd=os.path.dirname(BWE))
-            self.q.put(f'[SMART] BwE Validator dijalankan. PID={self.bwe_proc.pid}\n')
-            bwe_hwnds=self.find_windows(self.bwe_proc.pid, timeout=20)
-            if bwe_hwnds:
-                self.q.put('[SMART] Window BwE ditemukan.\n')
-                # Attempt the requested native menu command 7 only when the window is available.
-                self.bwe_hwnd=self.choose_window(bwe_hwnds)
-                time.sleep(1)
-                sent=self.send_foreground_keys(self.bwe_hwnd, '7')
-                self.q.put('[SMART] BwE No. 7 → %s\n' % ('DIKIRIM ✓' if sent else 'GAGAL'))
-            else:
-                self.q.put('[SMART] Window BwE tidak ditemukan.\n')
+                text = self.read_console_text(self.proc.pid)
+                filtered = self.filter_version_to_flash(text)
+                if filtered:
+                    self.q.put(('__FILTER__', filtered))
+                time.sleep(0.25)
+            self.q.put('[SMART] TEST 5 selesai.\n')
         except Exception as e:
             self.q.put('[ERROR] %r\n' % (e,))
         finally:
             self.q.put('__DONE__')
-
-    def filter_read_output(self,text):
-        if not text: return ''
-        lines=[x.rstrip() for x in text.replace('\\x00','').splitlines()]
-        # Keep actual read-related lines only; remove internal menus.
-        keep=[]
-        for line in lines:
-            low=line.lower().strip()
-            if any(k in low for k in ('read','reading','progress','sector','block','dump','percent','bytes','mb','completed','complete','saved','save','error','success')):
-                if 'make choice' not in low and not low.startswith(('1:','2:','3:','4:','5:','6:','7:','8:','9:')):
-                    keep.append(line)
-        return '\n'.join(keep[-40:])+'\n' if keep else ''
-
-    def is_read_complete(self,text):
-        low=text.lower()
-        return ('read all' in low and ('complete' in low or 'completed' in low or 'success' in low)) or ('saved' in low and ('nor' in low or '.bin' in low))
-
-    def find_newest_nor(self):
-        roots=[os.path.dirname(WETOOL), os.path.expanduser('~/Desktop'), os.path.expanduser('~/Documents')]
-        found=[]
-        cutoff=time.time()-3600
-        for root in roots:
-            if not os.path.isdir(root): continue
-            for base,dirs,files in os.walk(root):
-                dirs[:]=[d for d in dirs if d not in ('.git','__pycache__')]
-                for fn in files:
-                    if fn.lower().endswith(('.bin','.nor')):
-                        fp=os.path.join(base,fn)
-                        try:
-                            st=os.stat(fp)
-                            if st.st_mtime>=cutoff and st.st_size>0:
-                                found.append((st.st_mtime,fp,st.st_size))
-                        except OSError: pass
-        if not found: return ''
-        _,fp,size=max(found)
-        return f'File name : {os.path.basename(fp)}\nSize      : {size:,} bytes\nLocation  : {fp}\n'
-
-    def send_foreground_keys(self,hwnd,text):
-        if not hwnd or not user32.IsWindow(hwnd): return False
-        try:
-            user32.ShowWindow(hwnd, SW_RESTORE); user32.SetForegroundWindow(hwnd)
-            time.sleep(.4)
-            # simple keyboard injection for BwE GUI; no claim of completion, only command dispatch.
-            for ch in text:
-                vk=user32.VkKeyScanW(ord(ch)) & 0xff
-                self.key_event(vk, True); self.key_event(vk, False)
-            self.key_event(VK_RETURN, True); self.key_event(VK_RETURN, False)
-            return True
-        except Exception: return False
-
-    def key_event(self,vk,down):
-        class KEYBDINPUT(ctypes.Structure):
-            _fields_=[('wVk',wintypes.WORD),('wScan',wintypes.WORD),('dwFlags',wintypes.DWORD),('time',wintypes.DWORD),('dwExtraInfo',ctypes.c_void_p)]
-        class INPUT(ctypes.Structure):
-            _fields_=[('type',wintypes.DWORD),('ki',KEYBDINPUT)]
-        KEYEVENTF_KEYUP=0x0002
-        inp=INPUT(); inp.type=1; inp.ki=KEYBDINPUT(vk,0,KEYEVENTF_KEYUP if not down else 0,0,None)
-        user32.SendInput(1,ctypes.byref(inp),ctypes.sizeof(inp))
 
     def find_windows(self, pid, timeout=20):
         end = time.time() + timeout
@@ -332,9 +238,6 @@ class App:
         finally:
             kernel32.FreeConsole()
 
-    def append_read(self, s):
-        self.log.insert('end', s if s.endswith('\n') else s+'\n'); self.log.see('end')
-
     def stop(self):
         if self.proc and self.proc.poll() is None:
             try: self.proc.terminate()
@@ -349,10 +252,6 @@ class App:
                     self.running=False; self.btn.config(state='normal'); self.status.config(text='Tes selesai')
                 elif isinstance(s, tuple) and s[0]=='__FILTER__':
                     self.replace_filtered(s[1])
-                elif isinstance(s, tuple) and s[0]=='__READ__':
-                    self.append_read(s[1])
-                elif isinstance(s, tuple) and s[0]=='__FILEINFO__':
-                    self.append_read('\n[FILE INFORMATION]\n'+s[1])
                 else:
                     self.w(s)
         except queue.Empty: pass

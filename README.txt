@@ -1,9 +1,5 @@
-SMART REPAIR EDITION BY ALI GAMES - WETOOL CONTROLLER TEST 5
+SMART REPAIR WETOOL CONTROLLER TEST 6
 
-This test keeps the original WETOOL as the real engine/controller target.
-It injects the same console commands proven in TEST 4, while the Smart Repair log
-reads the WETOOL console screen and displays only the block from Version through
-Flash config. The SPIway title, Actions menu and Make choice are hidden from the
-Smart Repair log.
-
-WETOOL remains external in external/wetool.exe.
+TEST 6: WETOOL asli -> NO.3 -> READ ALL/READ FULL -> capture real output -> R rename -> launch original BwE validator -> attempt No.7.
+Smart Repair is controller only; it does not implement its own NOR reader.
+BwE executable is bundled as external/BwE_PS4_NOR_Validator.exe for this test.
