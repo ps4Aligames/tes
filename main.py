@@ -23,7 +23,7 @@ VK_1 = 0x31
 class App:
     def __init__(self, root):
         self.root = root
-        self.root.title('SMART REPAIR EDITION BY ALI GAMES - WETOOL CONTROLLER TEST 3')
+        self.root.title('SMART REPAIR EDITION BY ALI GAMES - WETOOL CONTROLLER TEST 4')
         self.root.geometry('1080x680')
         self.root.configure(bg='#0b0b0d')
         self.q = queue.Queue(); self.proc = None; self.hwnd = None; self.running = False
@@ -53,7 +53,7 @@ class App:
 
     def worker(self):
         try:
-            self.q.put('[SMART] TEST 3: controller langsung ke WETOOL asli.\n')
+            self.q.put('[SMART] TEST 4: injeksi langsung ke Console Input WETOOL.\n')
             self.q.put('[SMART] Tidak membuat READ FULL sendiri.\n')
             self.q.put('[SMART] Menjalankan WETOOL...\n')
             self.proc = subprocess.Popen([WETOOL], cwd=os.path.dirname(WETOOL))
@@ -68,20 +68,16 @@ class App:
             if not self.hwnd:
                 self.q.put('[ERROR] Tidak ada window yang bisa dipakai.\n'); return
             self.q.put('[SMART] Target HWND = 0x%X\n' % self.hwnd)
-            self.q.put('[SMART] Mengaktifkan WETOOL dan mengirim NO. 3 via Win32 keyboard...\n')
-            if not self.activate(self.hwnd):
-                self.q.put('[WARN] SetForegroundWindow gagal, tetapi tetap mencoba SendInput.\n')
+            self.q.put('[SMART] Mengirim NO. 3 langsung ke Console Input WETOOL...\n')
             time.sleep(0.5)
-            ok3 = self.send_input_text('3')
-            self.send_input_key(VK_RETURN)
-            self.q.put('[SMART] NO. 3 dikirim: %s\n' % ('OK ✓' if ok3 else 'GAGAL'))
+            ok3 = self.console_command('3')
+            self.q.put('[SMART] NO. 3 dimasukkan ke Console Input: %s\n' % ('OK ✓' if ok3 else 'GAGAL'))
             time.sleep(2.0)
-            self.q.put('[SMART] Mengirim NO. 1 via Win32 keyboard...\n')
-            ok1 = self.send_input_text('1')
-            self.send_input_key(VK_RETURN)
-            self.q.put('[SMART] NO. 1 dikirim: %s\n' % ('OK ✓' if ok1 else 'GAGAL'))
+            self.q.put('[SMART] Mengirim NO. 1 langsung ke Console Input WETOOL...\n')
+            ok1 = self.console_command('1')
+            self.q.put('[SMART] NO. 1 dimasukkan ke Console Input: %s\n' % ('OK ✓' if ok1 else 'GAGAL'))
             time.sleep(3.0)
-            self.q.put('[SMART] TEST 3 selesai. Jika WETOOL merespons NO.3/NO.1, controller input sudah terbukti.\n')
+            self.q.put('[SMART] TEST 4 selesai. Periksa apakah menu WETOOL benar-benar berpindah setelah NO.3 dan NO.1.\n')
             self.q.put('[SMART] Tahap READ FULL belum dijalankan otomatis pada test ini.\n')
         except Exception as e:
             self.q.put('[ERROR] %r\n' % (e,))
@@ -148,6 +144,87 @@ class App:
         class IN(ctypes.Structure): _anonymous_=('u',); _fields_=[('type',wintypes.DWORD),('u',U)]
         arr=(IN*2)(); arr[0].type=1; arr[0].ki.wVk=vk; arr[1].type=1; arr[1].ki.wVk=vk; arr[1].ki.dwFlags=2
         return user32.SendInput(2, ctypes.byref(arr), ctypes.sizeof(IN)) == 2
+
+    def console_command(self, text):
+        """Inject characters into the target WETOOL console input buffer.
+        This does not depend on foreground focus and is intended for a console app
+        such as WETOOL (ConsoleWindowClass)."""
+        if not self.proc or self.proc.poll() is not None:
+            return False
+        pid = self.proc.pid
+        ATTACH_PARENT_PROCESS = 0xFFFFFFFF
+        STD_INPUT_HANDLE = -10
+        KEY_EVENT = 0x0001
+        KEYEVENTF_KEYUP = 0x0002
+
+        class CHAR_UNION(ctypes.Union):
+            _fields_ = [('UnicodeChar', wintypes.WCHAR), ('AsciiChar', wintypes.CHAR)]
+        class KEY_EVENT_RECORD(ctypes.Structure):
+            _fields_ = [
+                ('bKeyDown', wintypes.BOOL),
+                ('wRepeatCount', wintypes.WORD),
+                ('wVirtualKeyCode', wintypes.WORD),
+                ('wVirtualScanCode', wintypes.WORD),
+                ('uChar', CHAR_UNION),
+                ('dwControlKeyState', wintypes.DWORD),
+            ]
+        class INPUT_RECORD_UNION(ctypes.Union):
+            _fields_ = [('KeyEvent', KEY_EVENT_RECORD)]
+        class INPUT_RECORD(ctypes.Structure):
+            _anonymous_ = ('Event',)
+            _fields_ = [('EventType', wintypes.WORD), ('Event', INPUT_RECORD_UNION)]
+
+        if not kernel32.AttachConsole(pid):
+            # ERROR_ACCESS_DENIED can mean the process is already attached to a console.
+            err = ctypes.get_last_error()
+            if err != 5:
+                self.q.put('[WARN] AttachConsole gagal, error=%s\\n' % err)
+                return False
+
+        try:
+            hstdin = kernel32.GetStdHandle(STD_INPUT_HANDLE)
+            if not hstdin or hstdin == wintypes.HANDLE(-1).value:
+                self.q.put('[WARN] Tidak mendapatkan Console Input Handle.\\n')
+                return False
+            records = []
+            for ch in text:
+                vk = user32.VkKeyScanW(ord(ch)) & 0xFF
+                rec_down = INPUT_RECORD()
+                rec_down.EventType = KEY_EVENT
+                rec_down.KeyEvent.bKeyDown = True
+                rec_down.KeyEvent.wRepeatCount = 1
+                rec_down.KeyEvent.wVirtualKeyCode = vk
+                rec_down.KeyEvent.wVirtualScanCode = user32.MapVirtualKeyW(vk, 0)
+                rec_down.KeyEvent.uChar.UnicodeChar = ch
+                records.append(rec_down)
+                rec_up = INPUT_RECORD()
+                rec_up.EventType = KEY_EVENT
+                rec_up.KeyEvent.bKeyDown = False
+                rec_up.KeyEvent.wRepeatCount = 1
+                rec_up.KeyEvent.wVirtualKeyCode = vk
+                rec_up.KeyEvent.wVirtualScanCode = user32.MapVirtualKeyW(vk, 0)
+                rec_up.KeyEvent.uChar.UnicodeChar = ch
+                records.append(rec_up)
+            # Enter key
+            for down in (True, False):
+                rec = INPUT_RECORD()
+                rec.EventType = KEY_EVENT
+                rec.KeyEvent.bKeyDown = down
+                rec.KeyEvent.wRepeatCount = 1
+                rec.KeyEvent.wVirtualKeyCode = VK_RETURN
+                rec.KeyEvent.wVirtualScanCode = user32.MapVirtualKeyW(VK_RETURN, 0)
+                rec.KeyEvent.uChar.UnicodeChar = '\r'
+                records.append(rec)
+            arr = (INPUT_RECORD * len(records))(*records)
+            written = wintypes.DWORD(0)
+            ok = kernel32.WriteConsoleInputW(hstdin, arr, len(records), ctypes.byref(written))
+            return bool(ok and written.value == len(records))
+        finally:
+            # Detach only if this controller attached to the target console.
+            try:
+                kernel32.FreeConsole()
+            except Exception:
+                pass
 
     def stop(self):
         if self.proc and self.proc.poll() is None:

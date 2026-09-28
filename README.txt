@@ -1,14 +1,13 @@
-SMART REPAIR - WETOOL CONTROLLER TEST 3
+SMART REPAIR - WETOOL CONTROLLER TEST 4
 
 Tujuan test:
-1. Jalankan WETOOL asli.
-2. Cari HWND WETOOL berdasarkan PID.
-3. Aktifkan WETOOL ke foreground.
-4. Kirim angka 3 + ENTER melalui Win32 SendInput.
-5. Tunggu 2 detik.
-6. Kirim angka 1 + ENTER melalui Win32 SendInput.
+- Menjalankan WETOOL asli.
+- Tidak membuat READ FULL sendiri.
+- Mengirim pilihan 3 lalu 1 langsung ke Console Input WETOOL memakai WriteConsoleInputW.
+- Tidak bergantung pada window foreground/fokus keyboard.
 
-Test ini TIDAK membuat engine READ FULL sendiri.
-READ FULL belum dipanggil otomatis; test hanya membuktikan jalur input controller.
+Jalankan tombol SMART READ FULL NOR - TEST CONTROLLER.
+Perhatikan WETOOL. Jika berhasil, menu WETOOL harus benar-benar bereaksi terhadap 3 lalu 1.
+Jika gagal, kirim foto log Smart Repair + layar WETOOL.
 
-Catatan: pada TEST 3 WETOOL sengaja terlihat selama pengujian agar mudah dibuktikan bahwa perintah benar-benar masuk. Jika ini berhasil, tahap berikutnya baru kita ubah agar WETOOL diminimalkan/background.
+Catatan: TEST 4 belum menjalankan READ FULL otomatis.
