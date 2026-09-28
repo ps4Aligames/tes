@@ -1,13 +1,9 @@
-SMART REPAIR - WETOOL CONTROLLER TEST 4
+SMART REPAIR EDITION BY ALI GAMES - WETOOL CONTROLLER TEST 5
 
-Tujuan test:
-- Menjalankan WETOOL asli.
-- Tidak membuat READ FULL sendiri.
-- Mengirim pilihan 3 lalu 1 langsung ke Console Input WETOOL memakai WriteConsoleInputW.
-- Tidak bergantung pada window foreground/fokus keyboard.
+This test keeps the original WETOOL as the real engine/controller target.
+It injects the same console commands proven in TEST 4, while the Smart Repair log
+reads the WETOOL console screen and displays only the block from Version through
+Flash config. The SPIway title, Actions menu and Make choice are hidden from the
+Smart Repair log.
 
-Jalankan tombol SMART READ FULL NOR - TEST CONTROLLER.
-Perhatikan WETOOL. Jika berhasil, menu WETOOL harus benar-benar bereaksi terhadap 3 lalu 1.
-Jika gagal, kirim foto log Smart Repair + layar WETOOL.
-
-Catatan: TEST 4 belum menjalankan READ FULL otomatis.
+WETOOL remains external in external/wetool.exe.
