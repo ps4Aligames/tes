@@ -1,17 +1,23 @@
-SMART REPAIR EDITION BY ALI GAMES - WETOOL CONTROLLER TEST
+SMART REPAIR - WETOOL CONTROLLER TEST 2
 
-Tujuan versi ini:
-Smart Repair hanya menjadi controller untuk wetool.exe asli.
-Tidak membuat mesin READ NOR sendiri dan tidak memilih COM secara manual.
+Tujuan:
+- Smart Repair hanya menjadi controller untuk WETOOL asli.
+- Tidak ada implementasi READ FULL sendiri.
+- WETOOL asli yang melakukan operasi hardware.
 
-Tes otomatis:
-1. Jalankan WETOOL hidden/background.
-2. Deteksi window WETOOL dengan Windows UI Automation.
-3. Coba kirim NO. 3.
-4. Tunggu lalu coba kirim NO. 1.
-5. Baca kontrol/menu yang benar-benar terlihat oleh UI Automation.
+Perubahan TEST 2:
+- WETOOL tidak lagi dijalankan hidden pada awal proses.
+- Controller mencari window WETOOL dengan backend UIA dan Win32.
+- Setelah handle/window ditemukan, WETOOL diminimalkan.
+- Baru kemudian controller mencoba NO.3 lalu NO.1.
+- READ FULL belum dipaksa pada TEST 2.
 
-Catatan:
-Versi ini adalah diagnostic controller. Jika WETOOL menggunakan kontrol custom/terenkripsi yang tidak dapat dikendalikan UI Automation, log akan menunjukkan keterbatasannya. Jangan menganggap READ FULL sudah otomatis sebelum hasil tes membuktikan bahwa menu WETOOL benar-benar menerima perintah.
+Portable:
+- Smart_Repair_WETOOL_Controller_Test.exe
+- external/wetool.exe
+- external/spiway_v0.60_teensy2.0.hex
 
-Firmware acuan tersedia di external/spiway_v0.60_teensy2.0.hex.
+Build:
+1. Upload repository ke GitHub.
+2. Actions -> Build Smart Repair WETOOL Controller Test -> Run workflow.
+3. Download artifact.
