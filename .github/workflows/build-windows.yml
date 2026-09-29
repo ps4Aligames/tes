@@ -1,16 +1,12 @@
-name: Build Smart Repair Controller
+name: Build Windows EXE
 
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-
-permissions:
-  contents: write
+    branches: [ "main", "master" ]
 
 jobs:
-  build-windows:
+  build:
     runs-on: windows-latest
 
     steps:
@@ -20,78 +16,17 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: '3.13'
 
       - name: Install dependencies
-        shell: pwsh
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyserial pyinstaller
-
-      - name: Check project files
-        shell: pwsh
-        run: |
-          if (-not (Test-Path "smart_repair_automation.py")) {
-            Write-Error "smart_repair_automation.py tidak ditemukan."
-            exit 1
-          }
-
-          if (-not (Test-Path "external/wetool.exe")) {
-            Write-Error "external/wetool.exe tidak ditemukan."
-            exit 1
-          }
-
-          if (-not (Test-Path "external/spiway_v0.60_teensy2.0.hex")) {
-            Write-Error "external/spiway_v0.60_teensy2.0.hex tidak ditemukan."
-            exit 1
-          }
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
 
       - name: Build EXE
-        shell: pwsh
-        run: |
-          pyinstaller `
-            --noconfirm `
-            --clean `
-            --onefile `
-            --console `
-            --name Smart_Repair_Controller `
-            smart_repair_automation.py
+        run: python -m PyInstaller --noconfirm --clean Smart_Repair_Controller_Test6.spec
 
-      - name: Prepare release package
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path "release/Smart_Repair_Controller/external" | Out-Null
-
-          Copy-Item "dist/Smart_Repair_Controller.exe" `
-            "release/Smart_Repair_Controller/Smart_Repair_Controller.exe"
-
-          Copy-Item "external/wetool.exe" `
-            "release/Smart_Repair_Controller/external/wetool.exe"
-
-          Copy-Item "external/spiway_v0.60_teensy2.0.hex" `
-            "release/Smart_Repair_Controller/external/spiway_v0.60_teensy2.0.hex"
-
-          if (Test-Path "external/BWE.exe") {
-            Copy-Item "external/BWE.exe" `
-              "release/Smart_Repair_Controller/external/BWE.exe"
-          }
-
-          if (Test-Path "README.txt") {
-            Copy-Item "README.txt" `
-              "release/Smart_Repair_Controller/README.txt"
-          }
-
-      - name: Create ZIP
-        shell: pwsh
-        run: |
-          Compress-Archive `
-            -Path "release/Smart_Repair_Controller" `
-            -DestinationPath "release/Smart_Repair_Controller_Windows.zip" `
-            -Force
-
-      - name: Upload build artifacts
+      - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Smart_Repair_Controller_Windows
-          path: release/Smart_Repair_Controller_Windows.zip
+          name: Smart_Repair_Controller_Test6-Windows
+          path: dist/Smart_Repair_Controller_Test6.exe
           if-no-files-found: error
