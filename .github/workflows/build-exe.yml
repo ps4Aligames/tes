@@ -1,28 +1,113 @@
+````yaml
 name: Build Smart Repair Safe Read
 
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - run: pip install -r requirements.txt
-      - run: pyinstaller --noconfirm --clean --onefile --windowed --name Smart_Repair_Safe_Read src/smart_repair.py
-      - shell: pwsh
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Check Python
         run: |
-          New-Item -ItemType Directory -Force -Path dist\external | Out-Null
-          Copy-Item external\wetool.exe dist\external\
-          Copy-Item external\BwE_PS4_NOR_Validator.exe dist\external\
-          Copy-Item "external\spiway_v0.60_teensy2.0(1).hex" dist\external\
-          Compress-Archive -Path dist\Smart_Repair_Safe_Read.exe,dist\external -DestinationPath Smart_Repair_Safe_Read_RELEASE.zip -Force
-      - uses: actions/upload-artifact@v4
+          python --version
+          python -m pip --version
+
+      - name: Install dependencies
+        shell: powershell
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller
+
+          if (Test-Path "requirements.txt") {
+            python -m pip install -r requirements.txt
+          }
+
+      - name: Check PyInstaller
+        run: |
+          python -m PyInstaller --version
+
+      - name: Build EXE
+        run: |
+          python -m PyInstaller `
+            --noconfirm `
+            --clean `
+            --onefile `
+            --windowed `
+            --name Smart_Repair_Safe_Read `
+            src/smart_repair.py
+
+      - name: Check build result
+        shell: powershell
+        run: |
+          if (!(Test-Path "dist/Smart_Repair_Safe_Read.exe")) {
+            Write-Error "Smart_Repair_Safe_Read.exe tidak berhasil dibuat."
+            exit 1
+          }
+
+          Get-Item "dist/Smart_Repair_Safe_Read.exe" |
+            Select-Object Name, Length, FullName
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
         with:
-          name: Smart_Repair_Safe_Read_RELEASE
-          path: Smart_Repair_Safe_Read_RELEASE.zip
+          name: Smart_Repair_Safe_Read
+          path: dist/Smart_Repair_Safe_Read.exe
+          if-no-files-found: error
+
+Struktur project-nya harus seperti ini:
+
+```text
+Smart-Repair/
+├── .github/
+│   └── workflows/
+│       └── build-exe.yml
+├── src/
+│   └── smart_repair.py
+└── requirements.txt    ← kalau memang ada
+````
+
+### Perbaikan utama
+
+Sebelumnya:
+
+```text
+pyinstaller ...
+```
+
+Sekarang:
+
+```text
+python -m PyInstaller ...
+```
+
+dan **PyInstaller di-install terlebih dahulu** dengan:
+
+```text
+python -m pip install pyinstaller
+```
+
+Setelah kamu upload ke GitHub, jalankan:
+
+**Actions → Build Smart Repair Safe Read → Run workflow**
+
+Kalau berhasil, di bagian **Artifacts** akan muncul:
+
+**`Smart_Repair_Safe_Read`**
+
+yang berisi:
+
+`Smart_Repair_Safe_Read.exe`
