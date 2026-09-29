@@ -35,19 +35,48 @@ jobs:
             python -m pip install -r requirements.txt
           }
 
+      - name: Find Smart Repair source
+        id: find_source
+        shell: powershell
+        run: |
+          $files = Get-ChildItem -Path . -Filter "smart_repair.py" -File -Recurse |
+            Where-Object { $_.FullName -notmatch "\\.git\\" }
+
+          if ($files.Count -eq 0) {
+            Write-Error "smart_repair.py tidak ditemukan di repository."
+            Write-Host "File Python yang tersedia:"
+            Get-ChildItem -Path . -Filter "*.py" -File -Recurse |
+              Where-Object { $_.FullName -notmatch "\\.git\\" } |
+              Select-Object -ExpandProperty FullName
+            exit 1
+          }
+
+          if ($files.Count -gt 1) {
+            Write-Host "Ditemukan beberapa smart_repair.py:"
+            $files | Select-Object -ExpandProperty FullName
+          }
+
+          $source = $files[0].FullName
+          $relative = $source.Substring((Get-Location).Path.Length).TrimStart('\')
+          Write-Host "Source yang digunakan: $relative"
+          "source=$relative" >> $env:GITHUB_OUTPUT
+
       - name: Check PyInstaller
         run: |
           python -m PyInstaller --version
 
       - name: Build EXE
+        shell: powershell
         run: |
+          $source = "${{ steps.find_source.outputs.source }}"
+
           python -m PyInstaller `
             --noconfirm `
             --clean `
             --onefile `
             --windowed `
             --name Smart_Repair_Safe_Read `
-            src/smart_repair.py
+            "$source"
 
       - name: Check build result
         shell: powershell
