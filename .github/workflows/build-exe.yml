@@ -1,4 +1,3 @@
-````yaml
 name: Build Smart Repair Safe Read
 
 on:
@@ -67,47 +66,3 @@ jobs:
           name: Smart_Repair_Safe_Read
           path: dist/Smart_Repair_Safe_Read.exe
           if-no-files-found: error
-
-Struktur project-nya harus seperti ini:
-
-```text
-Smart-Repair/
-├── .github/
-│   └── workflows/
-│       └── build-exe.yml
-├── src/
-│   └── smart_repair.py
-└── requirements.txt    ← kalau memang ada
-````
-
-### Perbaikan utama
-
-Sebelumnya:
-
-```text
-pyinstaller ...
-```
-
-Sekarang:
-
-```text
-python -m PyInstaller ...
-```
-
-dan **PyInstaller di-install terlebih dahulu** dengan:
-
-```text
-python -m pip install pyinstaller
-```
-
-Setelah kamu upload ke GitHub, jalankan:
-
-**Actions → Build Smart Repair Safe Read → Run workflow**
-
-Kalau berhasil, di bagian **Artifacts** akan muncul:
-
-**`Smart_Repair_Safe_Read`**
-
-yang berisi:
-
-`Smart_Repair_Safe_Read.exe`
